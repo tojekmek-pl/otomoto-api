@@ -508,6 +508,16 @@ function get_all_adverts($tokens)
 	}
 }
 
+function add_phone_numbers($phones, $post_id){
+
+	foreach($phones as $phone){
+		add_row('samochod_telefony', ['samochod_telefony_telefon' => $phone], $post_id);
+	}
+
+	
+
+}
+
 function process_custom_post($car)
 {
 
@@ -521,6 +531,7 @@ function process_custom_post($car)
 
 	// Prepare and insert the custom post meta
 	$meta_keys = array();
+	$meta_keys['otomoto_id'] = $car['id'] ?? '';
 	$meta_keys['samochod_stan'] = $car['new_used'] ?? 'used';
 	$meta_keys['samochod_cena'] = $car['params']['price'][1] ?? 0;
 	$meta_keys['samochod_marka'] = $car['params']['make'] ?? '';
@@ -549,7 +560,6 @@ function process_custom_post($car)
 	$meta_keys['samochod_opis'] = $car['description'] ?? '';
 
 	$meta_keys['samochod_lokalizacja'] = strtolower($car['city']['pl']);
-	// $meta_keys['samochod_cena_promo'] = '';
 
 	$custom_fields = array();
 	$place_holders = array();
@@ -562,16 +572,32 @@ function process_custom_post($car)
 	$query_string .= implode(', ', $place_holders);
 	$wpdb->query($wpdb->prepare("$query_string ", $custom_fields));
 
+	$phones = $car['contact']['phone_numbers'] ?? [];
+	if(count($phones)){
+		add_phone_numbers($phones, $post_id);
+	}
+
 	$image_ids = [];
 	if (isset($car['photos'])) {
 
 		foreach ($car['photos'] as $photo) {
-			$image_ids[] = download_image_from_url($photo['1080x720']);
+			if(count($photo) > 0){
+				if(isset($photo['1080x720'])){
+					$image_ids[] = download_image_from_url($photo['1080x720']);
+				}else{
+					$image_ids[] = download_image_from_url(reset($photo));
+				}
+			}
 		}
 
+		if(count($image_ids)){
+			set_post_thumbnail($post_id, $image_ids[0]);
+		}
+		
 		foreach ($image_ids as $attachement_id) {
 			attach_image_to_post($attachement_id, $post_id);
 		}
+
 	}
 
 	return true;
