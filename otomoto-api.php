@@ -4,9 +4,9 @@ set_time_limit(0);
 /*
 Plugin Name: Otomoto API
 Description: Wtyczka umożliwiająca synchronizację asortymentu z Otomoto.
-Version: 0.1
-Author: Norbert Jurga
-Author URI: http://norbertjurga.pl
+Version: 0.2
+Author: Tojekmek
+Author URI: https://tojekmek.pl
 */
 
 include( plugin_dir_path( __FILE__ ) . 'plugin-update-checker/plugin-update-checker.php');
@@ -536,7 +536,9 @@ function process_custom_post($car)
 	$meta_keys['samochod_vin'] = $car['params']['vin'] ?? '';
 	$meta_keys['samochod_liczba_drzwi'] = $car['params']['door_count'] ?? '';
 	$meta_keys['samochod_liczba_miejsc'] = $car['params']['nr_seats'] ?? '';
+
 	$meta_keys['samochod_pierwsza_rejestracja'] = $car['params']['date_registration'] ?? '';
+
 	$meta_keys['samochod_finansowanie'] = $car['params']['financial_option'] ?? '';
 
 	$meta_keys['samochod_fv'] = $car['params']['vat'] ?? '';
