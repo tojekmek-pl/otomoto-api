@@ -142,156 +142,152 @@ class PageTemplaterImport
 
 		add_action('edit_form_top', 'add_custom_form');
 
-		if (isset($_POST['post_id'])) {
-			$post_id = $_POST['post_id'];
+		// if (isset($_POST['post_id'])) {
+		// 	$post_id = $_POST['post_id'];
 
-			$otomoto_id = get_post_meta($_POST['post_id'], 'otomoto_id');
+		// 	$otomoto_id = get_post_meta($_POST['post_id'], 'otomoto_id');
 
-			$long = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "18.58702" : "19.06848";
-			$latit = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "50.33793" : "50.22196";
+		// 	$long = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "18.58702" : "19.06848";
+		// 	$latit = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "50.33793" : "50.22196";
 
-			$region_id = "6";
-			$city_id = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "6091" : "7691";
-			$district_id = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "181" : "229";
+		// 	$region_id = "6";
+		// 	$city_id = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "6091" : "7691";
+		// 	$district_id = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "181" : "229";
 
-			$municipality = ucfirst(get_field('samochod_lokalizacja', $post_id));
+		// 	$municipality = ucfirst(get_field('samochod_lokalizacja', $post_id));
 
-			$paint_type = get_field('samochod_kolor_typ', $post_id);
+		// 	$paint_type = get_field('samochod_kolor_typ', $post_id);
 
-			$explodedMake = explode('|', get_field('samochod_marka', $post_id));
+		// 	$explodedMake = explode('|', get_field('samochod_marka', $post_id));
 
-			$make = $explodedMake[1];
-			$model = $explodedMake[2];
-			$version = $explodedMake[3] ?? '';
+		// 	$make = $explodedMake[1];
+		// 	$model = $explodedMake[2];
+		// 	$version = $explodedMake[3] ?? '';
 
-			$city = [
-				'pl' => ucfirst(get_field('samochod_lokalizacja', $post_id)),
-				'en' => ucfirst(get_field('samochod_lokalizacja', $post_id))
-			];
-			$district = [
-				'pl' => ucfirst(get_field('samochod_lokalizacja', $post_id)),
-				'en' => ucfirst(get_field('samochod_lokalizacja', $post_id))
-			];
+		// 	$city = [
+		// 		'pl' => ucfirst(get_field('samochod_lokalizacja', $post_id)),
+		// 		'en' => ucfirst(get_field('samochod_lokalizacja', $post_id))
+		// 	];
+		// 	$district = [
+		// 		'pl' => ucfirst(get_field('samochod_lokalizacja', $post_id)),
+		// 		'en' => ucfirst(get_field('samochod_lokalizacja', $post_id))
+		// 	];
 
-			$params = [
-				"make" => $make,
-				"model" => $model,
-				"version" => $version,
-				"year" => get_field('samochod_rok', $post_id),
-				"mileage" => get_field('samochod_przebieg', $post_id),
-				"engine_capacity" => get_field('samochod_pojemnosc', $post_id),
-				"fuel_type" => get_field('samochod_paliwo', $post_id),
-				"engine_power" => get_field('samochod_moc', $post_id),
-				"gearbox" => get_field('samochod_skrzynia', $post_id),
-				"transmission" => get_field('samochod_naped', $post_id),
-				'no_accident' => get_field('samochod_bezkolizyjny', $post_id),
-				"door_count" => get_field('samochod_liczba_drzwi', $post_id),
-				"nr_seats" => get_field('samochod_liczba_miejsc', $post_id),
-				"color" => get_field('samochod_kolor', $post_id),
-				$paint_type => 1,
-				"vat_discount" => get_field('samochod_fvmarza', $post_id),
-				"financial_option" => get_field('samochod_finansowanie', $post_id),
-				"vat" => get_field('samochod_fv', $post_id),
-				"leasing_concession" => get_field('samochod_leasing', $post_id),
-				"date_registration"  => get_field('samochod_pierwsza_rejestracja', $post_id),
-				"price" => [
-					'price',
-					get_field('samochod_cena', $post_id),
-					'currency' => 'PLN',
-					'gross_net' => 'gross'
-				],
-				"country_origin" => "pl",
-			];
+		// 	$params = [
+		// 		"make" => $make,
+		// 		"model" => $model,
+		// 		"version" => $version,
+		// 		"year" => get_field('samochod_rok', $post_id),
+		// 		"mileage" => get_field('samochod_przebieg', $post_id),
+		// 		"engine_capacity" => get_field('samochod_pojemnosc', $post_id),
+		// 		"fuel_type" => get_field('samochod_paliwo', $post_id),
+		// 		"engine_power" => get_field('samochod_moc', $post_id),
+		// 		"gearbox" => get_field('samochod_skrzynia', $post_id),
+		// 		"transmission" => get_field('samochod_naped', $post_id),
+		// 		'no_accident' => get_field('samochod_bezkolizyjny', $post_id),
+		// 		"door_count" => get_field('samochod_liczba_drzwi', $post_id),
+		// 		"nr_seats" => get_field('samochod_liczba_miejsc', $post_id),
+		// 		"color" => get_field('samochod_kolor', $post_id),
+		// 		$paint_type => 1,
+		// 		"vat_discount" => get_field('samochod_fvmarza', $post_id),
+		// 		"financial_option" => get_field('samochod_finansowanie', $post_id),
+		// 		"vat" => get_field('samochod_fv', $post_id),
+		// 		"leasing_concession" => get_field('samochod_leasing', $post_id),
+		// 		"date_registration"  => get_field('samochod_pierwsza_rejestracja', $post_id),
+		// 		"price" => [
+		// 			'price',
+		// 			get_field('samochod_cena', $post_id),
+		// 			'currency' => 'PLN',
+		// 			'gross_net' => 'gross'
+		// 		],
+		// 		"country_origin" => "pl",
+		// 	];
 
-			$phones = [];
-			foreach(get_field('samochod_telefony', $post_id) as $number){
-				$phones[] = reset($number);
-			}
+		// 	$phones = [];
+		// 	foreach(get_field('samochod_telefony', $post_id) as $number){
+		// 		$phones[] = reset($number);
+		// 	}
 
-			$data = [
-				'title' => get_the_title($post_id),
-				'description' => get_field('samochod_opis', $post_id),
-				'city_id' => $city_id,
-				'district_id' => $district_id,
-				'new_used' => get_field('samochod_stan', $post_id),
-				'region_id' => $district_id,
-				'city' => $city,
-				'district' => $district,
-				'category_id' => "29",
-				'municipality' => $municipality,
-				'advertiser_type' => 'business',
-				'contact' => [
-					'person' => 'Przedsiębiorstwo Euro-Kas KIA ' . $municipality,
-					'phone_numbers' => $phones,
-				],
-				'coordinates' => [
-					'latitude' => $latit,
-					'longitude' => $long,
-					'radius' => 0,
-					'zoom_level' => 13,
-				],
-				'params' => $params,
-			];
+		// 	$data = [
+		// 		'title' => get_the_title($post_id),
+		// 		'description' => get_field('samochod_opis', $post_id),
+		// 		'city_id' => $city_id,
+		// 		'district_id' => $district_id,
+		// 		'new_used' => get_field('samochod_stan', $post_id),
+		// 		'region_id' => $district_id,
+		// 		'city' => $city,
+		// 		'district' => $district,
+		// 		'category_id' => "29",
+		// 		'municipality' => $municipality,
+		// 		'advertiser_type' => 'business',
+		// 		'contact' => [
+		// 			'person' => 'Przedsiębiorstwo Euro-Kas KIA ' . $municipality,
+		// 			'phone_numbers' => $phones,
+		// 		],
+		// 		'coordinates' => [
+		// 			'latitude' => $latit,
+		// 			'longitude' => $long,
+		// 			'radius' => 0,
+		// 			'zoom_level' => 13,
+		// 		],
+		// 		'params' => $params,
+		// 	];
 
-			$jsoned_data = json_encode($data, JSON_PRETTY_PRINT);
+		// 	$jsoned_data = json_encode($data, JSON_PRETTY_PRINT);
 
-			$oAuthUrl = 'https://www.otomoto.pl/api/open/oauth/token';
+		// 	$oAuthUrl = 'https://www.otomoto.pl/api/open/oauth/token';
 
-			$authArgsArr = ['body' => [
-				'client_id' => get_option('api-key-otomoto-id'),
-				'client_secret' => get_option('api-key-otomoto'),
-				'grant_type' => 'password',
-				'username' => null,
-				'password' => null,
-			]];
+		// 	$authArgsArr = ['body' => [
+		// 		'client_id' => get_option('api-key-otomoto-id'),
+		// 		'client_secret' => get_option('api-key-otomoto'),
+		// 		'grant_type' => 'password',
+		// 		'username' => null,
+		// 		'password' => null,
+		// 	]];
 	
-			$accounts = [
-				'used_cars' => ['username' => get_option('used-cars-login'), 'password' => get_option('used-cars-password')],
-				'katowice' => ['username' => get_option('katowice-login'), 'password' => get_option('katowice-password')],
-				'gliwice' => ['username' => get_option('gliwice-login'), 'password' => get_option('gliwice-password')],
-			];
+		// 	$accounts = [
+		// 		'used_cars' => ['username' => get_option('used-cars-login'), 'password' => get_option('used-cars-password')],
+		// 		'katowice' => ['username' => get_option('katowice-login'), 'password' => get_option('katowice-password')],
+		// 		'gliwice' => ['username' => get_option('gliwice-login'), 'password' => get_option('gliwice-password')],
+		// 	];
 	
-			foreach ($accounts as $accountName => $accountCredentials) {
+		// 	foreach ($accounts as $accountName => $accountCredentials) {
 
-				if ($accountCredentials['username']  == get_field('samochod_typogloszenia', $post_id)) {
-					$authArgsArr['body']['username'] = $accountCredentials['username'];
-					$authArgsArr['body']['password'] = $accountCredentials['password'];
+		// 		if ($accountCredentials['username']  == get_field('samochod_typogloszenia', $post_id)) {
+		// 			$authArgsArr['body']['username'] = $accountCredentials['username'];
+		// 			$authArgsArr['body']['password'] = $accountCredentials['password'];
 	
-					$response = wp_remote_post($oAuthUrl, $authArgsArr);
-					$responseBody = wp_remote_retrieve_body($response);
-					$decoded = json_decode($responseBody, true);
-					$token = $decoded['access_token'];
-				}
-			}
+		// 			$response = wp_remote_post($oAuthUrl, $authArgsArr);
+		// 			$responseBody = wp_remote_retrieve_body($response);
+		// 			$decoded = json_decode($responseBody, true);
+		// 			$token = $decoded['access_token'];
+		// 		}
+		// 	}
 
-			$args = array(
-				'headers' => array(
-				'Content-Type'   => 'application/json',
-				'Authorization' => 'Bearer ' . $token
-				),
-				'body'      => $jsoned_data,
-			);
-			$requestUrl = "https://www.otomoto.pl/api/open/adverts";
+		// 	$args = array(
+		// 		'headers' => array(
+		// 		'Content-Type'   => 'application/json',
+		// 		'Authorization' => 'Bearer ' . $token
+		// 		),
+		// 		'body'      => $jsoned_data,
+		// 	);
+		// 	$requestUrl = "https://www.otomoto.pl/api/open/account/adverts";
 
-			if($otomoto_id){
-				$args['method'] = 'PUT';
-				$requestUrl .= $otomoto_id;
-			}else{
-				$args['method'] = 'POST';
-			}
+
+		// 	if($otomoto_id != "" && is_numeric($otomoto_id)){
+		// 		$args['method'] = 'PUT';
+		// 		$requestUrl .= $otomoto_id;
+		// 	}else{
+		// 		$args['method'] = 'POST';
+		// 	}
 			
-			$result =  wp_remote_request( $requestUrl, $args );
-			$otomotoUpdatedId = wp_remote_retrieve_body($result)['id'];
+		// 	$result =  wp_remote_request( $requestUrl, $args );
+		// 	$otomotoResponse = wp_remote_retrieve_body($result);
+		// 	update_field('otomoto_id', $otomotoResponse['id'], $post_id);
 
-			update_field('otomoto_id', $otomotoUpdatedId, $post_id);
+		// 	return true;
+		// }
 
-			return true;
-		}
-
-
-		function post_new_image_collection()
-		{
-		}
 
 		function add_custom_form()
 		{
@@ -309,10 +305,10 @@ class PageTemplaterImport
 	<div class="inside">
 
 		<div class="main">
-			<form method="post" method="POST" action="">
+			<form method="post" method="POST" name="otomoto-form" action="">
 			<p><strong>Wyślij do otomoto:</strong></p>
 			<input type="hidden" value="$post_id" name="post_id" />
-			<button name="upload-otomoto" id="upload-otomoto" class="button button-primary">Zaktualizuj <span style="padding-top:3px" class="dashicons dashicons-arrow-up-alt"></span></button>
+			<button form='otomoto-form' name="upload-otomoto" id="upload-otomoto" class="button button-primary">Zaktualizuj <span style="padding-top:3px" class="dashicons dashicons-arrow-up-alt"></span></button>
 			</form>
 
 		</div>
