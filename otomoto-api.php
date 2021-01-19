@@ -711,13 +711,13 @@ function process_custom_post($car, $username)
 	$meta_keys['samochod_lokalizacja'] = strtolower($car['city']['pl']);
 
 	if ($car['params']['metallic'] == "1") {
-		$meta_keys['samochod_kolor_typ'] == "metallic";
+		$meta_keys['samochod_kolor_typ'] = "metallic";
 	} else if ($car['params']['pearl'] == "1") {
-		$meta_keys['samochod_kolor_typ'] == "pearl";
+		$meta_keys['samochod_kolor_typ'] = "pearl";
 	} else if ($car['params']['matt'] == "1") {
-		$meta_keys['samochod_kolor_typ'] == "matt";
+		$meta_keys['samochod_kolor_typ'] = "matt";
 	} else {
-		$meta_keys['samochod_kolor_typ'] == "acrylic";
+		$meta_keys['samochod_kolor_typ'] = "acrylic";
 	}
 
 	$custom_fields = array();
