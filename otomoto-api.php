@@ -4,7 +4,7 @@ set_time_limit(0);
 /*
 Plugin Name: Otomoto API
 Description: Wtyczka umożliwiająca synchronizację asortymentu z Otomoto.
-Version: 0.6
+Version: 0.7
 Author: Tojekmek
 Author URI: https://tojekmek.pl
 */
@@ -672,7 +672,7 @@ function process_custom_post($car, $username)
 	$custom_post = array();
 	$custom_post['post_type'] = 'samochod';
 	$custom_post['post_status'] = 'publish';
-	$custom_post['post_title'] = $car['title'];
+	$custom_post['post_title'] = $car['params']['make'] . ' ' .  $car['params']['model'] . ' ' . $car['params']['year'];
 	$post_id = wp_insert_post($custom_post);
 
 	$make = isset($car['params']['make']) ? '|' . $car['params']['make'] : '';
@@ -683,6 +683,7 @@ function process_custom_post($car, $username)
 	$meta_keys = array();
 	$meta_keys['otomoto_id'] = $car['id'] ?? '';
 	$meta_keys['samochod_stan'] = $car['new_used'] ?? 'used';
+	$meta_keys['samochod_otomoto_tytul'] = $car['title'] ?? '';
 	$meta_keys['samochod_typogloszenia'] = $username;
 	$meta_keys['samochod_cena'] = $car['params']['price'][1] ?? 0;
 	$meta_keys['samochod_marka'] = '29' . $make . $model . $version;
