@@ -4,7 +4,7 @@ set_time_limit(0);
 /*
 Plugin Name: Otomoto API
 Description: Wtyczka umożliwiająca synchronizację asortymentu z Otomoto.
-Version: 0.7
+Version: 0.8
 Author: Tojekmek
 Author URI: https://tojekmek.pl
 */
@@ -296,7 +296,7 @@ class PageTemplaterImport
 			if ('samochod' != $current_screen->post_type || $current_screen->action == 'add') {
 				return;
 			}
-			$post_id = get_post()->ID;
+
 			$post = <<<MLS
 <div class="postbox-container" style="margin-top:15px; width: 100%">
 
@@ -305,11 +305,10 @@ class PageTemplaterImport
 	<div class="inside">
 
 		<div class="main">
-			<form method="post" method="POST" name="otomoto-form" action="">
+
 			<p><strong>Wyślij do otomoto:</strong></p>
-			<input type="hidden" value="$post_id" name="post_id" />
 			<button form='otomoto-form' name="upload-otomoto" id="upload-otomoto" class="button button-primary">Zaktualizuj <span style="padding-top:3px" class="dashicons dashicons-arrow-up-alt"></span></button>
-			</form>
+
 
 		</div>
 
@@ -585,6 +584,49 @@ function attach_image_to_post($attachment_id, $parent_post_id)
 	update_field($field, $array, $parent_post_id);
 }
 
+function add_download_models_action(){
+	if (isset($_POST["download-models"]) && get_option('api-key-otomoto') && get_option('api-key-otomoto-id')) {
+
+		$oAuthUrl = 'https://www.otomoto.pl/api/open/oauth/token';
+
+		$authArgsArr = ['body' => [
+			'client_id' => get_option('api-key-otomoto-id'),
+			'client_secret' => get_option('api-key-otomoto'),
+			'grant_type' => 'password',
+			'username' => null,
+			'password' => null,
+		]];
+
+		$accounts = [
+			'used_cars' => ['username' => get_option('used-cars-login'), 'password' => get_option('used-cars-password')],
+			'katowice' => ['username' => get_option('katowice-login'), 'password' => get_option('katowice-password')],
+			'gliwice' => ['username' => get_option('gliwice-login'), 'password' => get_option('gliwice-password')],
+		];
+
+		$passToken = "";
+
+		foreach ($accounts as $accountName => $accountCredentials) {
+			if ($accountCredentials['username'] && $accountCredentials['password']) {
+
+				$authArgsArr['body']['username'] = $accountCredentials['username'];
+				$authArgsArr['body']['password'] = $accountCredentials['password'];
+
+				$response = wp_remote_post($oAuthUrl, $authArgsArr);
+				$responseBody = wp_remote_retrieve_body($response);
+
+				$decoded = json_decode($responseBody, true);
+				$passToken = $decoded['access_token'];
+
+				break;
+			}
+		}
+
+		if ($passToken != "") {
+			get_all_models($passToken);
+		}
+	}
+}
+
 function add_download_action()
 {
 	if (isset($_POST["download-otomoto"]) && get_option('api-key-otomoto') && get_option('api-key-otomoto-id')) {
@@ -630,7 +672,65 @@ function add_download_action()
 }
 
 add_action('init', 'add_download_action');
+add_action('init', 'add_download_models_action');
 
+function get_all_models($token){
+	$makes = ["kia", "opel", "volvo", "fiat", "peugeot"];
+	$category_id = 29;
+	$url = "https://www.otomoto.pl/api/open/categories/$category_id/models/";
+
+	$authArgsArr = ['headers' => [
+		'Authorization' => 'Bearer ' . $token
+	]];
+
+	$models = [];
+
+	foreach($makes as $make){
+
+		$response = wp_remote_get($url . $make, $authArgsArr);
+		$responseBody = wp_remote_retrieve_body($response);
+		$decodedResponse = json_decode($responseBody, true);
+		$makeModels = $decodedResponse['options'];
+		$models[$make] = [];
+
+		foreach($makeModels as $makeModelCode => $makeModelArray){
+			$versionsUrl = "https://www.otomoto.pl/api/open/categories/$category_id/models/$make/versions/$makeModelCode";
+
+			$versionResponse = wp_remote_get($versionsUrl, $authArgsArr);
+			$versionResponseBody = wp_remote_retrieve_body($versionResponse);
+			$decodedVersionResponseBody = json_decode($versionResponseBody, true);
+
+			$modelVersions = $decodedVersionResponseBody['options'] ?? false;
+
+			$structuredVersions = [];
+			if($modelVersions){
+				foreach($modelVersions as $versionCode => $versionNamesArr){
+					$structuredVersions[$versionCode] = $versionNamesArr['pl'];
+				}
+			}
+
+
+			$models[$make][$makeModelCode] = ["name" => $makeModelArray['pl'], "versions" => $structuredVersions];
+		}
+
+		$finalArray = [];
+		foreach($models as $make => $makeModels){
+			foreach($makeModels as $model => $modelArr){
+				array_push($finalArray, "29|$make|$model : " .  ucfirst($make) . " " . $modelArr['name']);
+				foreach($modelArr['versions'] as $versionCode => $versionName){
+					array_push($finalArray, "29|$make|$model|$versionCode : " .  ucfirst($make) . " " . $modelArr['name'] . " " . $versionName);
+				}
+			}
+		}
+
+	}
+
+	foreach($finalArray as $record){
+		echo $record . "<br>";
+	}
+
+	die();
+}
 
 function get_all_adverts($tokens)
 {
@@ -699,6 +799,7 @@ function process_custom_post($car, $username)
 	$meta_keys['samochod_vin'] = $car['params']['vin'] ?? '';
 	$meta_keys['samochod_liczba_drzwi'] = $car['params']['door_count'] ?? '';
 	$meta_keys['samochod_liczba_miejsc'] = $car['params']['nr_seats'] ?? '';
+	$meta_keys['samochod_nadwozie'] = $car['params']['body_type'] ?? '';
 	$meta_keys['samochod_pierwsza_rejestracja'] = $car['params']['date_registration'] ?? '';
 	$meta_keys['samochod_finansowanie'] = $car['params']['financial_option'] ?? '';
 
@@ -736,6 +837,9 @@ function process_custom_post($car, $username)
 	if (count($phones)) {
 		add_phone_numbers($phones, $post_id);
 	}
+
+	$features = $car['params']['features'] ?? [];
+	update_field('field_6005bfdfa1c2d', $car['params']['features'], $post_id );
 
 	$image_ids = [];
 	if (isset($car['photos'])) {
@@ -819,6 +923,9 @@ function import_options_page()
 						<form method="post" method="POST" action="">
 							<button name="download-otomoto" id="download-otomoto" class="button">
 								Pobierz asortyment <span style="padding-top:3px" class="dashicons dashicons-arrow-down-alt"></span>
+							</button>
+							<button name="download-models" id="download-models" class="button">
+								Pobierz listę modeli <span style="padding-top:3px" class="dashicons dashicons-arrow-down-alt"></span>
 							</button>
 						</form>
 
