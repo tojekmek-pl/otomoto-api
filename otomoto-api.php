@@ -4,7 +4,7 @@ set_time_limit(0);
 /*
 Plugin Name: Otomoto API
 Description: Wtyczka umożliwiająca synchronizację asortymentu z Otomoto.
-Version: 0.8
+Version: 0.9
 Author: Tojekmek
 Author URI: https://tojekmek.pl
 */
@@ -694,7 +694,7 @@ function get_all_models($token){
 		$models[$make] = [];
 
 		foreach($makeModels as $makeModelCode => $makeModelArray){
-			$versionsUrl = "https://www.otomoto.pl/api/open/categories/$category_id/models/$make/versions/$makeModelCode";
+			$versionsUrl = "https://www.otomoto.pl/api/open/categories/$category_id/models/$make/generations/$makeModelCode";
 
 			$versionResponse = wp_remote_get($versionsUrl, $authArgsArr);
 			$versionResponseBody = wp_remote_retrieve_body($versionResponse);
@@ -777,7 +777,7 @@ function process_custom_post($car, $username)
 
 	$make = isset($car['params']['make']) ? '|' . $car['params']['make'] : '';
 	$model =  isset($car['params']['model']) ? '|' . $car['params']['model'] : '';
-	$version = isset($car['params']['version']) ? '|' . $car['params']['version'] : '';
+	$version = isset($car['params']['version']) ? '|' . $car['params']['generation'] : '';
 
 	// Prepare and insert the custom post meta
 	$meta_keys = array();
