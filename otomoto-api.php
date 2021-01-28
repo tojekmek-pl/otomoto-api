@@ -4,7 +4,7 @@ set_time_limit(0);
 /*
 Plugin Name: Otomoto API
 Description: Wtyczka umożliwiająca synchronizację asortymentu z Otomoto.
-Version: 0.10
+Version: 0.11
 Author: Tojekmek
 Author URI: https://tojekmek.pl
 */
