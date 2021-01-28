@@ -779,7 +779,7 @@ function process_custom_post($car, $username)
 
 	$make = isset($car['params']['make']) ? '|' . $car['params']['make'] : '';
 	$model =  isset($car['params']['model']) ? '|' . $car['params']['model'] : '';
-	$version = isset($car['params']['version']) ? '|' . $car['params']['generation'] : '';
+	$version = isset($car['params']['generation']) ? '|' . $car['params']['generation'] : '';
 
 	// Prepare and insert the custom post meta
 	$meta_keys = array();
