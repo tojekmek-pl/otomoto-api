@@ -4,7 +4,7 @@ set_time_limit(0);
 /*
 Plugin Name: Otomoto API
 Description: Wtyczka umożliwiająca synchronizację asortymentu z Otomoto.
-Version: 0.9
+Version: 0.10
 Author: Tojekmek
 Author URI: https://tojekmek.pl
 */
@@ -244,19 +244,19 @@ class PageTemplaterImport
 		// 		'username' => null,
 		// 		'password' => null,
 		// 	]];
-	
+
 		// 	$accounts = [
 		// 		'used_cars' => ['username' => get_option('used-cars-login'), 'password' => get_option('used-cars-password')],
 		// 		'katowice' => ['username' => get_option('katowice-login'), 'password' => get_option('katowice-password')],
 		// 		'gliwice' => ['username' => get_option('gliwice-login'), 'password' => get_option('gliwice-password')],
 		// 	];
-	
+
 		// 	foreach ($accounts as $accountName => $accountCredentials) {
 
 		// 		if ($accountCredentials['username']  == get_field('samochod_typogloszenia', $post_id)) {
 		// 			$authArgsArr['body']['username'] = $accountCredentials['username'];
 		// 			$authArgsArr['body']['password'] = $accountCredentials['password'];
-	
+
 		// 			$response = wp_remote_post($oAuthUrl, $authArgsArr);
 		// 			$responseBody = wp_remote_retrieve_body($response);
 		// 			$decoded = json_decode($responseBody, true);
@@ -280,7 +280,7 @@ class PageTemplaterImport
 		// 	}else{
 		// 		$args['method'] = 'POST';
 		// 	}
-			
+
 		// 	$result =  wp_remote_request( $requestUrl, $args );
 		// 	$otomotoResponse = wp_remote_retrieve_body($result);
 		// 	update_field('otomoto_id', $otomotoResponse['id'], $post_id);
@@ -584,7 +584,8 @@ function attach_image_to_post($attachment_id, $parent_post_id)
 	update_field($field, $array, $parent_post_id);
 }
 
-function add_download_models_action(){
+function add_download_models_action()
+{
 	if (isset($_POST["download-models"]) && get_option('api-key-otomoto') && get_option('api-key-otomoto-id')) {
 
 		$oAuthUrl = 'https://www.otomoto.pl/api/open/oauth/token';
@@ -629,7 +630,7 @@ function add_download_models_action(){
 
 function add_download_action()
 {
-	if (isset($_POST["download-otomoto"]) && get_option('api-key-otomoto') && get_option('api-key-otomoto-id')) {
+	if ((isset($_POST["download-katowice"]) || isset($_POST["download-gliwice"]) || isset($_POST["download-used"])) && get_option('api-key-otomoto') && get_option('api-key-otomoto-id')) {
 
 		$oAuthUrl = 'https://www.otomoto.pl/api/open/oauth/token';
 
@@ -642,10 +643,11 @@ function add_download_action()
 		]];
 
 		$accounts = [
-			'used_cars' => ['username' => get_option('used-cars-login'), 'password' => get_option('used-cars-password')],
-			'katowice' => ['username' => get_option('katowice-login'), 'password' => get_option('katowice-password')],
-			'gliwice' => ['username' => get_option('gliwice-login'), 'password' => get_option('gliwice-password')],
+			'used_cars' => ['username' => isset($_POST["download-used"]) ? get_option('used-cars-login') : '', 'password' => isset($_POST["download-used"]) ? get_option('used-cars-password') : ''],
+			'katowice' => ['username' => isset($_POST["download-katowice"]) ? get_option('katowice-login') : '', 'password' => isset($_POST["download-katowice"]) ? get_option('katowice-password') : ''],
+			'gliwice' => ['username' => isset($_POST["download-gliwice"]) ? get_option('gliwice-login') : '', 'password' => isset($_POST["download-gliwice"]) ? get_option('gliwice-password') : ''],
 		];
+
 
 		$tokens = [];
 
@@ -674,7 +676,8 @@ function add_download_action()
 add_action('init', 'add_download_action');
 add_action('init', 'add_download_models_action');
 
-function get_all_models($token){
+function get_all_models($token)
+{
 	$makes = ["kia", "opel", "volvo", "fiat", "peugeot"];
 	$category_id = 29;
 	$url = "https://www.otomoto.pl/api/open/categories/$category_id/models/";
@@ -685,7 +688,7 @@ function get_all_models($token){
 
 	$models = [];
 
-	foreach($makes as $make){
+	foreach ($makes as $make) {
 
 		$response = wp_remote_get($url . $make, $authArgsArr);
 		$responseBody = wp_remote_retrieve_body($response);
@@ -693,7 +696,7 @@ function get_all_models($token){
 		$makeModels = $decodedResponse['options'];
 		$models[$make] = [];
 
-		foreach($makeModels as $makeModelCode => $makeModelArray){
+		foreach ($makeModels as $makeModelCode => $makeModelArray) {
 			$versionsUrl = "https://www.otomoto.pl/api/open/categories/$category_id/models/$make/generations/$makeModelCode";
 
 			$versionResponse = wp_remote_get($versionsUrl, $authArgsArr);
@@ -703,8 +706,8 @@ function get_all_models($token){
 			$modelVersions = $decodedVersionResponseBody['options'] ?? false;
 
 			$structuredVersions = [];
-			if($modelVersions){
-				foreach($modelVersions as $versionCode => $versionNamesArr){
+			if ($modelVersions) {
+				foreach ($modelVersions as $versionCode => $versionNamesArr) {
 					$structuredVersions[$versionCode] = $versionNamesArr['pl'];
 				}
 			}
@@ -714,18 +717,17 @@ function get_all_models($token){
 		}
 
 		$finalArray = [];
-		foreach($models as $make => $makeModels){
-			foreach($makeModels as $model => $modelArr){
+		foreach ($models as $make => $makeModels) {
+			foreach ($makeModels as $model => $modelArr) {
 				array_push($finalArray, "29|$make|$model : " .  ucfirst($make) . " " . $modelArr['name']);
-				foreach($modelArr['versions'] as $versionCode => $versionName){
+				foreach ($modelArr['versions'] as $versionCode => $versionName) {
 					array_push($finalArray, "29|$make|$model|$versionCode : " .  ucfirst($make) . " " . $modelArr['name'] . " " . $versionName);
 				}
 			}
 		}
-
 	}
 
-	foreach($finalArray as $record){
+	foreach ($finalArray as $record) {
 		echo $record . "<br>";
 	}
 
@@ -839,7 +841,7 @@ function process_custom_post($car, $username)
 	}
 
 	$features = $car['params']['features'] ?? [];
-	update_field('field_6005bfdfa1c2d', $car['params']['features'], $post_id );
+	update_field('field_6005bfdfa1c2d', $car['params']['features'], $post_id);
 
 	$image_ids = [];
 	if (isset($car['photos'])) {
@@ -898,19 +900,17 @@ function import_options_page()
 								<input type="text" placeholder="ID Klucza" name="api-key-otomoto-id" value="<?php echo esc_attr(get_option('api-key-otomoto-id')); ?>" />
 								<hr>
 								<label>Samochody używane</label>
-
 								<input style="margin-bottom:10px" type="text" placeholder="Login" name="used-cars-login" value="<?php echo esc_attr(get_option('used-cars-login')); ?>" />
-								<input type="password" placeholder="Hasło" name="used-cars-password" value="<?php echo esc_attr(get_option('used-cars-password')); ?>" />
+								<input style="margin-bottom:10px" type="password" placeholder="Hasło" name="used-cars-password" value="<?php echo esc_attr(get_option('used-cars-password')); ?>" />
 								<hr>
 								<label>Samochody od ręki Gliwice</label>
-
 								<input style="margin-bottom:10px" type="text" placeholder="Login" name="gliwice-login" value="<?php echo esc_attr(get_option('gliwice-login')); ?>" />
-								<input type="password" placeholder="Hasło" name="gliwice-password" value="<?php echo esc_attr(get_option('gliwice-password')); ?>" />
-
+								<input style="margin-bottom:10px" type="password" placeholder="Hasło" name="gliwice-password" value="<?php echo esc_attr(get_option('gliwice-password')); ?>" />
 								<hr>
 								<label>Hasło: Samochody od ręki Katowice</label>
 								<input style="margin-bottom:10px" type="text" placeholder="Login" name="katowice-login" value="<?php echo esc_attr(get_option('katowice-login')); ?>" />
-								<input type="password" placeholder="Hasło" name="katowice-password" value="<?php echo esc_attr(get_option('katowice-password')); ?>" />
+								<input style="margin-bottom:10px" type="password" placeholder="Hasło" name="katowice-password" value="<?php echo esc_attr(get_option('katowice-password')); ?>" />
+
 
 							</div>
 
@@ -921,11 +921,17 @@ function import_options_page()
 						<h2>Akcje</h2>
 
 						<form method="post" method="POST" action="">
-							<button name="download-otomoto" id="download-otomoto" class="button">
-								Pobierz asortyment <span style="padding-top:3px" class="dashicons dashicons-arrow-down-alt"></span>
-							</button>
 							<button name="download-models" id="download-models" class="button">
 								Pobierz listę modeli <span style="padding-top:3px" class="dashicons dashicons-arrow-down-alt"></span>
+							</button>
+							<button name="download-katowice" id="download-katowice" class="button">
+								Pobierz asortyment - Katowice <span style="padding-top:3px" class="dashicons dashicons-arrow-down-alt"></span>
+							</button>
+							<button name="download-gliwice" id="download-gliwice" class="button">
+								Pobierz asortyment - Gliwice <span style="padding-top:3px" class="dashicons dashicons-arrow-down-alt"></span>
+							</button>
+							<button name="download-used" id="download-used" class="button">
+								Pobierz asortyment - Używane <span style="padding-top:3px" class="dashicons dashicons-arrow-down-alt"></span>
 							</button>
 						</form>
 
