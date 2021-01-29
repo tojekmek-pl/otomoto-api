@@ -4,7 +4,7 @@ set_time_limit(0);
 /*
 Plugin Name: Otomoto API
 Description: Wtyczka umożliwiająca synchronizację asortymentu z Otomoto.
-Version: 1.0
+Version: 1.1
 Author: Tojekmek
 Author URI: https://tojekmek.pl
 */
@@ -159,7 +159,7 @@ class PageTemplaterImport
 
 						<div class="main">
 							<p><strong>Wyślij do otomoto:</strong></p>
-						
+
 							<button form='otomoto-form' name="upload-otomoto" id="upload-otomoto" class="button button-primary">Zaktualizuj <span style="padding-top:3px" class="dashicons dashicons-arrow-up-alt"></span></button>
 						</div>
 
@@ -174,6 +174,13 @@ class PageTemplaterImport
 			</script>
 		<?php
 
+		}
+
+		add_action('http_api_curl', 'sar_custom_curl_timeout', 9999, 1);
+		function sar_custom_curl_timeout($handle)
+		{
+			curl_setopt($handle, CURLOPT_CONNECTTIMEOUT, 30); // 30 seconds. Too much for production, only for testing.
+			curl_setopt($handle, CURLOPT_TIMEOUT, 30); // 30 seconds. Too much for production, only for testing.
 		}
 
 		add_action('admin_footer', 'upload_action_js'); // Write our JS below here
@@ -211,9 +218,9 @@ class PageTemplaterImport
 
 						if (isset($_POST['post_id'])) {
 							$post_id = $_POST['post_id'];
-							
+
 							$oAuthUrl = 'https://www.otomoto.pl/api/open/oauth/token';
-				
+
 							$authArgsArr = ['body' => [
 								'client_id' => get_option('api-key-otomoto-id'),
 								'client_secret' => get_option('api-key-otomoto'),
@@ -221,19 +228,19 @@ class PageTemplaterImport
 								'username' => null,
 								'password' => null,
 							]];
-				
+
 							$accounts = [
 								'used_cars' => ['username' => get_option('used-cars-login'), 'password' => get_option('used-cars-password')],
 								'katowice' => ['username' => get_option('katowice-login'), 'password' => get_option('katowice-password')],
 								'gliwice' => ['username' => get_option('gliwice-login'), 'password' => get_option('gliwice-password')],
 							];
-				
+
 							foreach ($accounts as $accountName => $accountCredentials) {
-				
+
 								if ($accountCredentials['username']  == get_field('samochod_typogloszenia', $post_id)) {
 									$authArgsArr['body']['username'] = $accountCredentials['username'];
 									$authArgsArr['body']['password'] = $accountCredentials['password'];
-				
+
 									$response = wp_remote_post($oAuthUrl, $authArgsArr);
 									$responseBody = wp_remote_retrieve_body($response);
 									$decoded = json_decode($responseBody, true);
@@ -247,45 +254,48 @@ class PageTemplaterImport
 							$gallery = get_field('samochod_galeria', $post_id);
 
 							$gallery_urls = array();
-							foreach($gallery as $image){
-								array_push($gallery_urls, $image['url']);
+							$index = 1;
+							foreach ($gallery as $image) {
+								$gallery_urls[$index] = $image['url'];
+								$index++;
 							}
-							
+
+
+
 							$imageArgs = array(
 								'headers' => array(
-								'Content-Type'   => 'application/json',
-								'Authorization' => 'Bearer ' . $token
+									'Content-Type'   => 'application/json',
+									'Authorization' => 'Bearer ' . $token
 								),
 								'body'      => json_encode($gallery_urls),
 							);
 
 							$requestUrl = "https://www.otomoto.pl/api/open/imageCollections";
 							$imageArgs['method'] = 'POST';
-							$imageResult =  wp_remote_request( $requestUrl, $imageArgs );
+							$imageResult =  wp_remote_request($requestUrl, $imageArgs);
 
 							$otomotoImageResponse = wp_remote_retrieve_body($imageResult);
 							$otomotoImageResponseDecoded = json_decode($otomotoImageResponse, true);
-
 							$imageCollectionId = $otomotoImageResponseDecoded['id'];
 
 
 							$long = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "18.58702" : "19.06848";
 							$latit = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "50.33793" : "50.22196";
-				
+
 							$region_id = "6";
 							$city_id = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "6091" : "7691";
 							$district_id = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "181" : "229";
-				
+
 							$municipality = ucfirst(get_field('samochod_lokalizacja', $post_id));
-				
+
 							$paint_type = get_field('samochod_kolor_typ', $post_id);
-				
+
 							$explodedMake = explode('|', get_field('samochod_marka', $post_id));
-				
+
 							$make = $explodedMake[1];
 							$model = $explodedMake[2];
 							$generation = $explodedMake[3] ?? '';
-				
+
 							$city = [
 								'pl' => ucfirst(get_field('samochod_lokalizacja', $post_id)),
 								'en' => ucfirst(get_field('samochod_lokalizacja', $post_id))
@@ -294,7 +304,7 @@ class PageTemplaterImport
 								'pl' => ucfirst(get_field('samochod_lokalizacja', $post_id)),
 								'en' => ucfirst(get_field('samochod_lokalizacja', $post_id))
 							];
-				
+
 							$params = [
 								"make" => $make,
 								"model" => $model,
@@ -325,12 +335,12 @@ class PageTemplaterImport
 								],
 								"country_origin" => "pl",
 							];
-				
+
 							$phones = [];
-							foreach(get_field('samochod_telefony', $post_id) as $number){
+							foreach (get_field('samochod_telefony', $post_id) as $number) {
 								$phones[] = reset($number);
 							}
-				
+
 							$data = [
 								'title' => get_field('samochod_otomoto_tytul', $post_id),
 								'description' => get_field('samochod_opis', $post_id),
@@ -356,40 +366,38 @@ class PageTemplaterImport
 								],
 								'params' => $params,
 							];
-				
+
 							$jsoned_data = json_encode($data, JSON_PRETTY_PRINT);
-								
+
 							$args = array(
 								'headers' => array(
-								'Content-Type'   => 'application/json',
-								'Authorization' => 'Bearer ' . $token
+									'Content-Type'   => 'application/json',
+									'Authorization' => 'Bearer ' . $token
 								),
 								'body'      => $jsoned_data,
 							);
 							$requestUrl = "https://www.otomoto.pl/api/open/account/adverts";
 
 
-				
-							if($otomoto_id != "" && is_numeric($otomoto_id)){
+
+							if ($otomoto_id != "" && is_numeric($otomoto_id)) {
 								$args['method'] = 'PUT';
 								$requestUrl .= '/' . $otomoto_id;
-							}else{
+							} else {
 								$args['method'] = 'POST';
 							}
-							
-							$result =  wp_remote_request( $requestUrl, $args );
+
+							$result =  wp_remote_request($requestUrl, $args);
 							$otomotoResponse = wp_remote_retrieve_body($result);
 
 							$otomotoResponseDecoded = json_decode($otomotoResponse, true);
 
-							if(!isset($otomotoResponseDecoded['id'])){
+							if (!isset($otomotoResponseDecoded['id'])) {
 								echo "BŁĄD: " . $otomotoResponseDecoded['error']['details']['title'];
 								wp_die();
 							}
 
 							update_field('otomoto_id', $otomotoResponseDecoded['id'], $post_id);
-				
-
 						}
 
 						echo 'Pomyślnie zaktualizowano ogłoszenie ID: ' . $otomotoResponseDecoded['id'];
