@@ -4,7 +4,7 @@ set_time_limit(0);
 /*
 Plugin Name: Otomoto API
 Description: Wtyczka umożliwiająca synchronizację asortymentu z Otomoto.
-Version: 0.12
+Version: 0.13
 Author: Tojekmek
 Author URI: https://tojekmek.pl
 */
@@ -211,8 +211,62 @@ class PageTemplaterImport
 
 						if (isset($_POST['post_id'])) {
 							$post_id = $_POST['post_id'];
+							
+							$oAuthUrl = 'https://www.otomoto.pl/api/open/oauth/token';
 				
+							$authArgsArr = ['body' => [
+								'client_id' => get_option('api-key-otomoto-id'),
+								'client_secret' => get_option('api-key-otomoto'),
+								'grant_type' => 'password',
+								'username' => null,
+								'password' => null,
+							]];
+				
+							$accounts = [
+								'used_cars' => ['username' => get_option('used-cars-login'), 'password' => get_option('used-cars-password')],
+								'katowice' => ['username' => get_option('katowice-login'), 'password' => get_option('katowice-password')],
+								'gliwice' => ['username' => get_option('gliwice-login'), 'password' => get_option('gliwice-password')],
+							];
+				
+							foreach ($accounts as $accountName => $accountCredentials) {
+				
+								if ($accountCredentials['username']  == get_field('samochod_typogloszenia', $post_id)) {
+									$authArgsArr['body']['username'] = $accountCredentials['username'];
+									$authArgsArr['body']['password'] = $accountCredentials['password'];
+				
+									$response = wp_remote_post($oAuthUrl, $authArgsArr);
+									$responseBody = wp_remote_retrieve_body($response);
+									$decoded = json_decode($responseBody, true);
+									$token = $decoded['access_token'];
+								}
+							}
+
+
+
 							$otomoto_id = get_field('otomoto_id', $post_id);
+							$gallery = get_field('samochod_galeria', $post_id);
+
+							$gallery_urls = array();
+							foreach($gallery as $image){
+								array_push($gallery_urls, $image['url']);
+							}
+							
+							$imageArgs = array(
+								'headers' => array(
+								'Content-Type'   => 'application/json',
+								'Authorization' => 'Bearer ' . $token
+								),
+								'body'      => json_encode($gallery_urls),
+							);
+
+							$requestUrl = "https://www.otomoto.pl/api/open/imageCollections";
+							$imageArgs['method'] = 'POST';
+							$imageResult =  wp_remote_request( $requestUrl, $imageArgs );
+
+							$otomotoImageResponse = wp_remote_retrieve_body($imageResult);
+							$otomotoImageResponseDecoded = json_decode($otomotoImageResponse, true);
+
+							$imageCollectionId = $otomotoImageResponseDecoded['id'];
 
 
 							$long = get_field('samochod_lokalizacja', $post_id) == 'gliwice' ? "18.58702" : "19.06848";
@@ -289,6 +343,7 @@ class PageTemplaterImport
 								'category_id' => "29",
 								'municipality' => $municipality,
 								'advertiser_type' => 'business',
+								'image_collection_id' => $imageCollectionId,
 								'contact' => [
 									'person' => 'Przedsiębiorstwo Euro-Kas KIA ' . $municipality,
 									'phone_numbers' => $phones,
@@ -303,37 +358,7 @@ class PageTemplaterImport
 							];
 				
 							$jsoned_data = json_encode($data, JSON_PRETTY_PRINT);
-				
-							$oAuthUrl = 'https://www.otomoto.pl/api/open/oauth/token';
-				
-							$authArgsArr = ['body' => [
-								'client_id' => get_option('api-key-otomoto-id'),
-								'client_secret' => get_option('api-key-otomoto'),
-								'grant_type' => 'password',
-								'username' => null,
-								'password' => null,
-							]];
-				
-							$accounts = [
-								'used_cars' => ['username' => get_option('used-cars-login'), 'password' => get_option('used-cars-password')],
-								'katowice' => ['username' => get_option('katowice-login'), 'password' => get_option('katowice-password')],
-								'gliwice' => ['username' => get_option('gliwice-login'), 'password' => get_option('gliwice-password')],
-							];
-				
-							foreach ($accounts as $accountName => $accountCredentials) {
-				
-								if ($accountCredentials['username']  == get_field('samochod_typogloszenia', $post_id)) {
-									$authArgsArr['body']['username'] = $accountCredentials['username'];
-									$authArgsArr['body']['password'] = $accountCredentials['password'];
-				
-									$response = wp_remote_post($oAuthUrl, $authArgsArr);
-									$responseBody = wp_remote_retrieve_body($response);
-									$decoded = json_decode($responseBody, true);
-									$token = $decoded['access_token'];
-								}
-							}
-
-				
+								
 							$args = array(
 								'headers' => array(
 								'Content-Type'   => 'application/json',
@@ -342,7 +367,8 @@ class PageTemplaterImport
 								'body'      => $jsoned_data,
 							);
 							$requestUrl = "https://www.otomoto.pl/api/open/account/adverts";
-				
+
+
 				
 							if($otomoto_id != "" && is_numeric($otomoto_id)){
 								$args['method'] = 'PUT';
