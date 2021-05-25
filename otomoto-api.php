@@ -4,7 +4,7 @@ set_time_limit(0);
 /*
 Plugin Name: Otomoto API
 Description: Wtyczka umożliwiająca synchronizację asortymentu z Otomoto.
-Version: 1.1.1
+Version: 1.2.0
 Author: Tojekmek
 Author URI: https://tojekmek.pl
 */
@@ -762,17 +762,24 @@ class PageTemplaterImport
 
 			function get_all_models($token)
 			{
-				$makes = ["kia", "opel", "volvo", "fiat", "peugeot"];
+
 				$category_id = 29;
 				$url = "https://www.otomoto.pl/api/open/categories/$category_id/models/";
+				$makesUrl = "https://www.otomoto.pl/api/open/categories/$category_id/makes";
 
 				$authArgsArr = ['headers' => [
 					'Authorization' => 'Bearer ' . $token
 				]];
 
+
+				$makesResponse = wp_remote_get($makesUrl, $authArgsArr);
+				$responseMakesBody = wp_remote_retrieve_body($response);
+				$decodedMakesResponse = json_decode($responseMakesBody, true);
+				$makesResponseArr = $decodedMakesResponse['options'];
+
 				$models = [];
 
-				foreach ($makes as $make) {
+				foreach ($makesResponseArr as $make => $translation) {
 
 					$response = wp_remote_get($url . $make, $authArgsArr);
 					$responseBody = wp_remote_retrieve_body($response);
