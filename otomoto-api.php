@@ -4,7 +4,7 @@ set_time_limit(0);
 /*
 Plugin Name: Otomoto API
 Description: Wtyczka umożliwiająca synchronizację asortymentu z Otomoto.
-Version: 1.2.0
+Version: 1.2.1
 Author: Tojekmek
 Author URI: https://tojekmek.pl
 */
@@ -773,7 +773,7 @@ class PageTemplaterImport
 
 
 				$makesResponse = wp_remote_get($makesUrl, $authArgsArr);
-				$responseMakesBody = wp_remote_retrieve_body($response);
+				$responseMakesBody = wp_remote_retrieve_body($makesResponse);
 				$decodedMakesResponse = json_decode($responseMakesBody, true);
 				$makesResponseArr = $decodedMakesResponse['options'];
 
